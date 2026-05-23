@@ -181,6 +181,12 @@ TOOLSETS = {
         "includes": []
     },
 
+    "local_llm_router": {
+        "description": "Safe local LLM worker routing for draft/extract/classify/code-triage prep",
+        "tools": ["local_llm_router"],
+        "includes": []
+    },
+
     
     "file": {
         "description": "File manipulation tools: read, write, patch (with fuzzy matching), and search (content + files)",
@@ -319,6 +325,12 @@ TOOLSETS = {
         "description": "Safe toolkit without terminal access",
         "tools": [],
         "includes": ["web", "vision", "image_gen"]
+    },
+
+    "local_model_no_tools": {
+        "description": "No-tool local model lane for draft/extract/classify worker calls",
+        "tools": [],
+        "includes": []
     },
     
     # ==========================================================================

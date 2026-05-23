@@ -2364,6 +2364,25 @@ def _collect_query_images(query: str | None, image_arg: str | None = None) -> tu
     return message, deduped
 
 
+def _close_single_query_session(cli, result: dict | None = None) -> None:
+    """Best-effort session close for non-interactive `hermes chat -q` runs."""
+    session_db = getattr(cli, "_session_db", None)
+    agent = getattr(cli, "agent", None)
+    session_id = getattr(agent, "session_id", None) or getattr(cli, "session_id", None)
+    if not session_db or not session_id:
+        return
+    reason = "single_query_complete"
+    if isinstance(result, dict):
+        if result.get("interrupted"):
+            reason = "single_query_interrupted"
+        elif result.get("failed") or result.get("partial"):
+            reason = "single_query_failed"
+    try:
+        session_db.end_session(session_id, reason)
+    except Exception:
+        pass
+
+
 class ChatConsole:
     """Rich Console adapter for prompt_toolkit's patch_stdout context.
 
@@ -14490,6 +14509,7 @@ def main(
                         print(response)
                     # Session ID goes to stderr so piped stdout is clean.
                     print(f"\nsession_id: {cli.session_id}", file=sys.stderr)
+                    _close_single_query_session(cli, result if isinstance(result, dict) else None)
                     
                     # Ensure proper exit code for automation wrappers
                     sys.exit(1 if isinstance(result, dict) and result.get("failed") else 0)
@@ -14517,6 +14537,7 @@ def main(
             # banner, doesn't depend on the welcome banner being shown.
             cli._show_security_advisories()
             cli.chat(query, images=single_query_images or None)
+            _close_single_query_session(cli)
             cli._print_exit_summary()
         return
     
